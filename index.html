@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DRP 质押管理简化版</title>
+    <!-- 引入 Bootstrap 用于快速布局 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- 引入 Ethers.js V6 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+    <style>
+        /* ================= 【全局样式设置】 ================= */
+        body { 
+            background-color: #0f172a; 
+            color: #e2e8f0; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+        }
+        .card { 
+            background-color: #1e293b; 
+            border: 1px solid #334155; 
+        }
+        .card-title { 
+            color: #fff; 
+        }
+        .btn-primary { 
+            background-color: #3b82f6; 
+            border: none; 
+        }
+        .btn-primary:hover { 
+            background-color: #2563eb; 
+        }
+        .btn-success { 
+            background-color: #10b981; 
+            border: none; 
+        }
+        .btn-warning { 
+            background-color: #f59e0b; 
+            border: none; 
+            color: #fff; 
+        }
+        .stat-value { 
+            font-size: 1.25rem; 
+            font-weight: bold; 
+            color: #38bdf8; 
+        }
+        .stat-label { 
+            font-size: 0.85rem; 
+            color: #94a3b8; 
+        }
+        
+        /* ================= 【质押操作区域美化样式】 ================= */
+        .stake-operation-card {
+            background: linear-gradient(145deg, #0d2739, #123047);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .stake-operation-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .stake-input-group {
+            margin-bottom: 15px;
+        }
+        
+        .stake-input-label {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            margin-bottom: 8px;
+            display: block;
+        }
+        
+        .stake-amount-input {
+            width: 100%;
+            padding: 12px;
+            background-color: #1e293b;
+            border: 1px solid #475569;
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .stake-amount-input:focus {
+            outline: none;
+            border-color: #0d9488;
+            box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.2);
+        }
+        
+        .duration-buttons {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+        
+        /* ================= 【质押周期按钮样式 - 手机端优化】 ================= */
+        .duration-btn {
+            flex: 1;
+            padding: 10px 4px;
+            background: linear-gradient(145deg, #1e293b, #0f172a);
+            border: 2px solid #334155;
+            border-radius: 8px;
+            color: #94a3b8;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            min-width: 60px; /* 【调整点：按钮最小宽度】 */
+        }
+        
+        .duration-btn:hover {
+            border-color: #0d9488;
+            color: #0d9488;
+            transform: translateY(-2px);
+        }
+        
+        .duration-btn.active {
+            background: linear-gradient(90deg, #0d9488, #0a6c5f);
+            border-color: #0d9488;
+            color: white;
+            box-shadow: 0 4px 12px rgba(13, 148, 136, 0.3);
+        }
+        
+        .stake-action-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(90deg, #0d9488, #0a6c5f);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .stake-action-btn:hover {
+            background: linear-gradient(90deg, #0a6c5f, #0d9488);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(13, 148, 136, 0.4);
+        }
+        
+        /* ================= 【质押记录卡片样式 - 卡片大小和字体调整区域】 ================= */
+        /* 【调整点1：卡片容器网格布局】修改minmax中的240px可调整卡片最小宽度 */
+        .stake-card-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 12px;
+            margin-top: 15px;
+        }
+        
+        /* 【卡片整体样式】 */
+        .stake-card {
+            background: linear-gradient(145deg, #0d9488, #134e4a);
+            border-radius: 8px;
+            padding: 12px;
+            position: relative;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .stake-card:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* 【卡片头部】 */
+        .stake-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        /* 【调整点2：卡片ID字体大小】修改此值改变ID显示的字体大小 */
+        .stake-card-id {
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: #fff;
+        }
+        
+        /* 【调整点3：状态标签字体大小】 */
+        .stake-card-status {
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 15px;
+            font-weight: 600;
+        }
+        
+        .status-locked {
+            background-color: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        
+        .status-unlocked {
+            background-color: rgba(34, 197, 94, 0.2);
+            color: #34d399;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+        
+        .status-completed {
+            background-color: rgba(156, 163, 175, 0.2);
+            color: #9ca3af;
+            border: 1px solid rgba(156, 163, 175, 0.3);
+        }
+        
+        /* 【卡片信息区域】 */
+        .stake-card-info {
+            margin-bottom: 10px;
+        }
+        
+        /* 【调整点4：质押金额字体大小】 */
+        .stake-amount {
+            font-size: 1rem;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+        
+        .stake-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+        
+        /* 【调整点5：质押周期字体大小】 */
+        .stake-duration {
+            color: #94a3b8;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        /* 【调整点6：质押时间字体大小】 */
+        .stake-time {
+            color: #94a3b8;
+            font-size: 0.7rem;
+        }
+        
+        /* 【进度条区域】 */
+        .stake-progress {
+            margin: 10px 0;
+        }
+        
+        .stake-progress-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 0.75rem; /* 【调整点7：进度条信息字体大小】 */
+        }
+        
+        .stake-remaining-time {
+            color: #e2e8f0;
+        }
+        
+        .stake-progress-percent {
+            color: #38bdf8;
+            font-weight: 600;
+        }
+        
+        .stake-progress-bar {
+            height: 4px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        
+        .stake-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            border-radius: 2px;
+            transition: width 0.5s ease;
+        }
+        
+        /* 【卡片操作按钮区域】 */
+        .stake-card-actions {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+        
+        /* 【空状态样式】 */
+        .stake-empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 30px 15px;
+            color: #94a3b8;
+            background-color: rgba(30, 41, 59, 0.5);
+            border-radius: 8px;
+            border: 2px dashed #475569;
+        }
+        
+        .stake-empty-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            color: #475569;
+        }
+        
+        .stake-empty-text {
+            font-size: 0.9rem;
+            margin-bottom: 6px;
+        }
+        
+        .stake-empty-subtext {
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+        
+        /* 【状态筛选按钮样式】 */
+        .status-filter {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .status-filter-btn {
+            font-size: 0.8rem;
+            padding: 4px 12px;
+            border-radius: 20px;
+            border: 1px solid #475569;
+            background-color: #1e293b;
+            color: #94a3b8;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .status-filter-btn:hover {
+            border-color: #3b82f6;
+            color: #3b82f6;
+        }
+        
+        .status-filter-btn.active {
+            background-color: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+        
+        /* ================= 【响应式调整 - 手机端优化】 ================= */
+        @media (max-width: 768px) {
+            /* 【调整点8：手机端卡片布局】改为单列显示 */
+            .stake-card-container {
+                grid-template-columns: 1fr;
+            }
+            
+            /* 【调整点9：手机端按钮进一步缩小】 */
+            .duration-buttons {
+                flex-wrap: nowrap; /* 确保不换行 */
+                gap: 4px; /* 减少间距 */
+            }
+            
+            .duration-btn {
+                padding: 8px 3px;
+                font-size: 0.8rem;
+                min-width: 50px; /* 手机端进一步缩小 */
+            }
+            
+            /* 【调整点10：手机端卡片内字体大小】 */
+            .stake-card-id {
+                font-size: 0.85rem;
+            }
+            
+            .stake-amount {
+                font-size: 0.95rem;
+            }
+        }
+        
+        @media (min-width: 769px) and (max-width: 1200px) {
+            /* 【调整点11：平板端显示列数】 */
+            .stake-card-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (min-width: 1201px) {
+            /* 【调整点12：桌面端显示列数】 */
+            .stake-card-container {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        /* 【总统计数据卡片样式】 */
+        .total-stats-card { 
+            border-left: 4px solid #3b82f6; 
+        }
+    </style>
+</head>
+<body>
+
+<div class="container py-4">
+    <!-- 【钱包连接区域】 -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold">DRP Staking</h3>
+        <button id="connectBtn" class="btn btn-primary" onclick="connectWallet()">连接钱包</button>
+    </div>
+
+    <!-- 【数据统计面板】 -->
+    <div class="row mb-4 text-center g-2">
+        <div class="col-6 col-md-3">
+            <div class="card p-3 h-100">
+                <div class="stat-label">我的 USDT 余额</div>
+                <div class="stat-value" id="myBalance">0.0000</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card p-3 h-100">
+                <div class="stat-label">待提现余额 (合约内)</div>
+                <div class="stat-value" id="stakedBalance">0.0000</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card p-3 h-100">
+                <div class="stat-label">可提现 USDT (池子)</div>
+                <div class="stat-value" id="poolBalance">0.0000</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card p-3 h-100 total-stats-card">
+                <div class="stat-label">合约总质押</div>
+                <div class="stat-value" id="totalStaked">0.0000</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 【质押操作区域 - 简化版样式】 -->
+    <div class="stake-operation-card">
+        <div class="stake-operation-title">参与质押</div>
+        
+        <div class="stake-input-group">
+            <label class="stake-input-label">质押金额 (USDT)</label>
+            <input type="number" class="stake-amount-input" id="stakeAmount" value="1000" placeholder="输入金额">
+        </div>
+        
+        <div class="duration-selection">
+            <label class="stake-input-label">选择质押周期</label>
+            <div class="duration-buttons">
+                <button class="duration-btn active" onclick="selectDuration(1, this)">1天</button>
+                <button class="duration-btn" onclick="selectDuration(15, this)">15天</button>
+                <button class="duration-btn" onclick="selectDuration(30, this)">30天</button>
+            </div>
+        </div>
+        
+        <button class="stake-action-btn" onclick="handleStake()">立即质押</button>
+    </div>
+
+    <!-- 【我的质押记录区域 - 移除总质押记录选项卡】 -->
+    <div class="card">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="card-title mb-0">我的质押记录</h5>
+                <div>
+                    <button class="btn btn-sm btn-outline-light" onclick="refreshData()">刷新数据</button>
+                </div>
+            </div>
+            
+            <!-- 【状态筛选】 -->
+            <div class="status-filter">
+                <button class="status-filter-btn active" onclick="filterMyStakes('active')">质押中</button>
+                <button class="status-filter-btn" onclick="filterMyStakes('completed')">已赎回</button>
+                <button class="status-filter-btn" onclick="filterMyStakes('all')">全部记录</button>
+            </div>
+            
+            <!-- 【卡片式布局容器】 -->
+            <div id="stakeCardsContainer" class="stake-card-container">
+                <div class="stake-empty-state">
+                    <div class="stake-empty-icon">📊</div>
+                    <div class="stake-empty-text">暂无质押记录</div>
+                    <div class="stake-empty-subtext">连接钱包后，您的质押记录将显示在这里</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 引入 Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    // ================= 【配置区域 - 需要替换的地方】 =================
+    // 【注意：如果要更换合约地址，需要修改以下三个地址】
+    const CONFIG = {
+        STAKING: "0x7E1882b471F627Ba75935BCb12105545Eb8b4227",  // 【DRP质押合约地址】
+        USDT: "0x55d398326f99059fF775485246999027B3197955",    // 【USDT代币地址】
+        PAIR: "0xAB71C14094575C6ec8f2e61C708D5f4A3c3d5ca0"     // 【流动性池地址】
+    };
+    
+    // 【质押周期配置 (秒)】
+    const STAKE_DURATIONS = {
+        0: 86400,      // 1天
+        1: 1296000,    // 15天 (15 * 86400)
+        2: 2592000     // 30天 (30 * 86400)
+    };
+    
+    const STAKE_DURATION_LABELS = {
+        0: "1天",
+        1: "15天", 
+        2: "30天"
+    };
+    // ============================================================
+
+    // ================= 【ABI配置 - 需要替换的地方】 =================
+    // 【USDT代币ABI】
+    const ABI_ERC20 = [
+        "function balanceOf(address owner) view returns (uint256)",
+        "function decimals() view returns (uint8)",
+        "function approve(address spender, uint256 amount) returns (bool)",
+        "function allowance(address owner, address spender) view returns (uint256)"
+    ];
+
+    // 【DRP质押合约ABI】
+    const ABI_STAKING = [
+        "function totalSupply() view returns (uint256)",
+        "function balanceOf(address account) view returns (uint256)",
+        "function stake(uint160 _amount, uint256 amountOutMin, uint8 _stakeIndex)",
+        "function unstake(uint256 index)",
+        "function stakeCount(address user) view returns (uint256)",
+        'function maxStakeAmount() view returns (uint256)',
+        "function userStakeRecord(address user, uint256 index) view returns (uint40 stakeTime, uint160 amount, bool status, uint8 stakeIndex)"
+    ];
+    // ============================================================
+
+    // 全局变量
+    let provider, signer, userAddress;
+    let stakingContract, usdtContract;
+    let countdownTimers = {};
+    let selectedDuration = 1; // 默认选择1天
+    
+    // 筛选状态
+    let myStakeFilter = 'active'; // 我的质押记录筛选：active=质押中, completed=已赎回, all=全部
+
+    // 工具函数
+    function formatAmount(wei) {
+        const val = ethers.formatUnits(wei, 18);
+        return parseFloat(val).toFixed(0);
+    }
+
+    function formatTimeRemaining(seconds) {
+        if (seconds <= 0) return "0秒";
+        const days = Math.floor(seconds / 86400);
+        const hours = Math.floor((seconds % 86400) / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        let result = "";
+        if (days > 0) result += `${days}天`;
+        if (hours > 0) result += `${hours}小时`;
+        if (minutes > 0 && days === 0) result += `${minutes}分`;
+        return result || "0秒";
+    }
+
+    function formatStakeTime(timestamp) {
+        const date = new Date(timestamp * 1000);
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const day = date.getDate().toString().padStart(2, '0');
+        const hour = date.getHours().toString().padStart(2, '0');
+        const minute = date.getMinutes().toString().padStart(2, '0');
+        return `${month}/${day} ${hour}:${minute}`;
+    }
+
+    function calculateProgress(stakeTime, durationSeconds) {
+        const now = Math.floor(Date.now() / 1000);
+        const elapsedTime = now - stakeTime;
+        if (elapsedTime >= durationSeconds) return 100;
+        return Math.min(100, Math.floor((elapsedTime / durationSeconds) * 100));
+    }
+
+    // 选择质押周期
+    function selectDuration(days, element) {
+        selectedDuration = days;
+        document.querySelectorAll('.duration-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        element.classList.add('active');
+    }
+
+    // 筛选我的质押记录
+    function filterMyStakes(filterType) {
+        myStakeFilter = filterType;
+        renderStakeCards();
+    }
+
+    // 1. 连接钱包
+    async function connectWallet() {
+        if (!window.ethereum) {
+            alert("请安装 MetaMask!");
+            return;
+        }
+        try {
+            provider = new ethers.BrowserProvider(window.ethereum);
+            signer = await provider.getSigner();
+            userAddress = await signer.getAddress();
+            
+            document.getElementById('connectBtn').innerText = userAddress.slice(0, 6) + "..." + userAddress.slice(-4);
+            document.getElementById('connectBtn').classList.replace('btn-primary', 'btn-success');
+
+            stakingContract = new ethers.Contract(CONFIG.STAKING, ABI_STAKING, signer);
+            usdtContract = new ethers.Contract(CONFIG.USDT, ABI_ERC20, signer);
+
+            await refreshData();
+        } catch (error) {
+            console.error("连接失败:", error);
+            alert("连接钱包失败");
+        }
+    }
+
+    // 2. 刷新所有数据
+    async function refreshData() {
+        if (!userAddress) return;
+        const btn = document.querySelector('button[onclick="refreshData()"]');
+        const originalText = btn.innerText;
+        btn.innerText = "加载中...";
+        
+        try {
+            const myBal = await usdtContract.balanceOf(userAddress);
+            document.getElementById('myBalance').innerText = formatAmount(myBal);
+
+            const stakedBal = await stakingContract.balanceOf(userAddress);
+            document.getElementById('stakedBalance').innerText = formatAmount(stakedBal);
+
+            const poolBal = await usdtContract.balanceOf(CONFIG.PAIR);
+            document.getElementById('poolBalance').innerText = formatAmount(poolBal);
+            
+            const totalStaked = await stakingContract.totalSupply();
+            document.getElementById('totalStaked').innerText = formatAmount(totalStaked);
+
+            await renderStakeCards();
+            btn.innerText = "刷新";
+        } catch (error) {
+            console.error("数据加载错误:", error);
+        } finally {
+            btn.innerText = originalText;
+        }
+    }
+
+    // 3. 渲染质押卡片
+    async function renderStakeCards() {
+        const container = document.getElementById('stakeCardsContainer');
+        container.innerHTML = '<div class="text-center py-3"><div class="loading-spinner"></div> 加载中...</div>';
+
+        try {
+            const count = await stakingContract.stakeCount(userAddress);
+            
+            if (Number(count) === 0) {
+                container.innerHTML = `
+                    <div class="stake-empty-state">
+                        <div class="stake-empty-icon">📊</div>
+                        <div class="stake-empty-text">暂无质押记录</div>
+                        <div class="stake-empty-subtext">开始您的第一次质押吧！</div>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            const now = Math.floor(Date.now() / 1000);
+
+            Object.keys(countdownTimers).forEach(id => {
+                clearInterval(countdownTimers[id]);
+                delete countdownTimers[id];
+            });
+
+            for (let i = Number(count) - 1; i >= 0; i--) {
+                const record = await stakingContract.userStakeRecord(userAddress, i);
+                
+                const amount = parseFloat(ethers.formatUnits(record[1], 18));
+                const stakeTime = Number(record[0]);
+                const stakeTimeStr = formatStakeTime(stakeTime);
+                const isActive = record[2]; 
+                const stakeIndex = Number(record[3]);
+                const durationSeconds = STAKE_DURATIONS[stakeIndex] || 86400;
+                const durationLabel = STAKE_DURATION_LABELS[stakeIndex] || "未知";
+                
+                const unlockTime = stakeTime + durationSeconds;
+                const timeRemaining = unlockTime - now;
+                const isLocked = timeRemaining > 0 && !isActive;
+                const isUnlocked = timeRemaining <= 0 && !isActive;
+                const progressPercent = calculateProgress(stakeTime, durationSeconds);
+                
+                let statusText = '';
+                let statusClass = '';
+                
+                if (isActive) {
+                    statusText = '已提取';
+                    statusClass = 'status-completed';
+                } else if (isLocked) {
+                    statusText = '锁定中';
+                    statusClass = 'status-locked';
+                } else if (isUnlocked) {
+                    statusText = '可赎回';
+                    statusClass = 'status-unlocked';
+                }
+                
+                let shouldDisplay = false;
+                if (myStakeFilter === 'all') shouldDisplay = true;
+                else if (myStakeFilter === 'active') shouldDisplay = !isActive;
+                else if (myStakeFilter === 'completed') shouldDisplay = isActive;
+                
+                if (!shouldDisplay) continue;
+
+                const remainingTimeStr = isLocked ? formatTimeRemaining(timeRemaining) : 
+                                          isUnlocked ? '已解锁' : '已完成';
+
+                html += `
+                    <div class="stake-card" id="stake-card-${i}">
+                        <div class="stake-card-header">
+                            <div class="stake-card-id">No.${i + 1}</div>
+                            <div class="stake-card-status ${statusClass}">${statusText}</div>
+                        </div>
+                        
+                        <div class="stake-card-info">
+                            <div class="stake-amount">${amount.toFixed(0)} USDT</div>
+                            <div class="stake-meta">
+                                <div class="stake-duration">
+                                    <span class="badge-duration">${durationLabel}</span>
+                                </div>
+                                <div class="stake-time">${stakeTimeStr}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="stake-progress">
+                            <div class="stake-progress-info">
+                                <div class="stake-remaining-time">剩余: ${remainingTimeStr}</div>
+                                <div class="stake-progress-percent">${progressPercent}%</div>
+                            </div>
+                            <div class="stake-progress-bar">
+                                <div class="stake-progress-fill" id="progress-${i}" style="width: ${progressPercent}%"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="stake-card-actions">
+                            ${isUnlocked ? 
+                                `<button class="btn btn-warning btn-sm" id="unstake-btn-${i}" onclick="handleUnstake(${i})">赎回</button>` : 
+                                `<button class="btn btn-secondary btn-sm" disabled>${isActive ? '已赎回' : '等待解锁'}</button>`
+                            }
+                        </div>
+                    </div>
+                `;
+                
+                if (isLocked) {
+                    startProgressCountdown(i, timeRemaining, durationSeconds);
+                }
+            }
+
+            if (html === '') {
+                let emptyText = '暂无质押记录';
+                if (myStakeFilter === 'active') emptyText = '暂无质押中的记录';
+                else if (myStakeFilter === 'completed') emptyText = '暂无已赎回的记录';
+                
+                container.innerHTML = `
+                    <div class="stake-empty-state">
+                        <div class="stake-empty-icon">📊</div>
+                        <div class="stake-empty-text">${emptyText}</div>
+                        <div class="stake-empty-subtext">${myStakeFilter === 'active' ? '开始质押以创建新的质押记录' : '开始您的第一次质押吧！'}</div>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = html;
+            }
+        } catch (error) {
+            console.error("卡片加载失败:", error);
+            container.innerHTML = `
+                <div class="stake-empty-state">
+                    <div class="stake-empty-icon">❌</div>
+                    <div class="stake-empty-text">加载失败</div>
+                    <div class="stake-empty-subtext">请刷新页面重试</div>
+                </div>
+            `;
+        }
+    }
+
+    // 启动进度条倒计时
+    function startProgressCountdown(id, initialSeconds, totalSeconds) {
+        let remaining = initialSeconds;
+        const progressElement = document.getElementById(`progress-${id}`);
+        const timeElement = document.querySelector(`#stake-card-${id} .stake-remaining-time`);
+        
+        if (!progressElement || !timeElement) return;
+        
+        const timer = setInterval(() => {
+            remaining--;
+            
+            if (remaining <= 0) {
+                clearInterval(timer);
+                refreshData();
+                return;
+            }
+            
+            timeElement.textContent = `剩余: ${formatTimeRemaining(remaining)}`;
+            
+            const elapsedSeconds = totalSeconds - remaining;
+            const progressPercent = Math.min(100, Math.floor((elapsedSeconds / totalSeconds) * 100));
+            progressElement.style.width = `${progressPercent}%`;
+            
+            const percentElement = document.querySelector(`#stake-card-${id} .stake-progress-percent`);
+            if (percentElement) percentElement.textContent = `${progressPercent}%`;
+            
+        }, 1000);
+        
+        countdownTimers[id] = timer;
+    }
+
+    // 4. 质押逻辑
+    async function handleStake() {
+        if (!userAddress) {
+            alert("请先连接钱包");
+            return;
+        }
+        
+        const amountStr = document.getElementById('stakeAmount').value;
+        if (!amountStr || parseFloat(amountStr) <= 0) {
+            alert("请输入有效的质押金额");
+            return;
+        }
+        
+        const amount = parseFloat(amountStr);
+        if (amount < 0.1) {
+            alert("质押金额不能小于0.1 USDT");
+            return;
+        }
+        
+        if (amount > 1000000) {
+            alert("质押金额不能超过1,000,000 USDT");
+            return;
+        }
+        
+        try {
+            const amountWei = ethers.parseUnits(amountStr, 18);
+            const stakeBtn = document.querySelector('.stake-action-btn');
+            const originalText = stakeBtn.textContent;
+            
+            try {
+                stakeBtn.disabled = true;
+                stakeBtn.textContent = "处理中...";
+                
+                const myBal = await usdtContract.balanceOf(userAddress);
+                if (myBal < amountWei) {
+                    alert("USDT余额不足，请先充值");
+                    throw new Error("余额不足");
+                }
+                
+                const allowance = await usdtContract.allowance(userAddress, CONFIG.STAKING);
+                
+                if (allowance < amountWei) {
+                    stakeBtn.textContent = "正在授权 USDT...";
+                    const txApprove = await usdtContract.approve(CONFIG.STAKING, ethers.MaxUint256);
+                    const receipt = await txApprove.wait();
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                }
+                
+                const dailyRates = {1: 0.5, 15: 0.8, 30: 1.3};
+                const dailyRate = dailyRates[selectedDuration] || 0.5;
+                const expectedProfit = (amount * (dailyRate / 100) * selectedDuration).toFixed(4);
+                
+                const confirmStake = confirm(
+                    `确认质押 ${amountStr} USDT\n` +
+                    `质押周期: ${selectedDuration}天\n` +
+                    `日化利率: ${dailyRate}%\n` +
+                    `预计收益: ${expectedProfit} USDT\n` +
+                    `\n是否继续？`
+                );
+                
+                if (!confirmStake) throw new Error("用户取消");
+                
+                let stakeIndex = 0;
+                if (selectedDuration === 1) stakeIndex = 0;
+                else if (selectedDuration === 15) stakeIndex = 1;
+                else if (selectedDuration === 30) stakeIndex = 2;
+                
+                stakeBtn.textContent = "正在质押...";
+                const txStake = await stakingContract.stake(amountWei, 0, stakeIndex, { gasLimit: 500000 });
+                const receipt = await txStake.wait();
+                
+                if (receipt.status === 1) {
+                    alert(`质押成功！周期：${selectedDuration}天\n预计收益: ${expectedProfit} USDT`);
+                    await refreshData();
+                } else {
+                    throw new Error("交易失败");
+                }
+                
+            } catch (error) {
+                console.error("质押过程错误:", error);
+                throw error;
+            } finally {
+                stakeBtn.disabled = false;
+                stakeBtn.textContent = originalText;
+            }
+            
+        } catch (error) {
+            console.error("质押失败:", error);
+            if (error.code === 4001) alert("用户拒绝了交易");
+            else if (error.reason) alert(`合约错误: ${error.reason}`);
+            else if (error.message !== "用户取消") alert(`错误: ${error.message || "未知错误"}`);
+        }
+    }
+
+    // 5. 赎回逻辑
+    async function handleUnstake(index) {
+        if (!userAddress) return;
+        
+        const btn = document.getElementById(`unstake-btn-${index}`);
+        if(btn) {
+            btn.disabled = true;
+            btn.innerText = "处理中...";
+        }
+
+        try {
+            const tx = await stakingContract.unstake(index);
+            await tx.wait();
+            alert("赎回成功！");
+            refreshData();
+
+        } catch (error) {
+            console.error(error);
+            if(btn) {
+                btn.disabled = false;
+                btn.innerText = "赎回";
+            }
+            if(error.reason) alert("合约错误: " + error.reason);
+            else alert("赎回失败");
+        }
+    }
+
+    // 页面卸载时清理定时器
+    window.addEventListener('beforeunload', () => {
+        Object.keys(countdownTimers).forEach(id => {
+            clearInterval(countdownTimers[id]);
+        });
+    });
+
+    // 初始连接钱包
+    window.addEventListener('load', () => {
+        if (typeof window.ethereum !== 'undefined') {
+            window.ethereum.request({ method: 'eth_accounts' })
+                .then(accounts => {
+                    if (accounts.length > 0) connectWallet();
+                });
+        }
+    });
+</script>
+</body>
+</html>
