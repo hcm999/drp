@@ -161,7 +161,7 @@
         .stake-card {
             background: linear-gradient(145deg, #0d9488, #134e4a);
             border-radius: 8px;
-            padding: 12px;
+            padding: 8px;  /* ← 这是控制卡片高度的主要参数 */
             position: relative;
             box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
             transition: transform 0.2s;
@@ -192,7 +192,7 @@
         
         /* 【调整点3：状态标签字体大小】 */
         .stake-card-status {
-            font-size: 0.7rem;
+            font-size: 0.9rem;
             padding: 2px 8px;
             border-radius: 15px;
             font-weight: 600;
@@ -238,7 +238,7 @@
         
         /* 【调整点5：质押周期字体大小】 */
         .stake-duration {
-            color: #94a3b8;
+            color: #ff0000;
             font-size: 1rem;
             display: flex;
             align-items: center;
@@ -247,7 +247,7 @@
         
         /* 【调整点6：质押时间字体大小】 */
         .stake-time {
-            color: #94a3b8;
+            color: #ff0000;
             font-size: 1rem;
         }
         
@@ -260,7 +260,7 @@
             display: flex;
             justify-content: space-between;
             margin-bottom: 5px;
-            font-size: 0.75rem; /* 【调整点7：进度条信息字体大小】 */
+            font-size: 0.8rem; /* 【调整点7：进度条信息字体大小】 */
         }
         
         .stake-remaining-time {
