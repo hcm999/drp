@@ -153,19 +153,20 @@
         .cards-container {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: 25px;
-            margin-top: 20px;
+            gap: 15px; /* 减少卡片之间的行间隙 */
+            margin-top: 15px; /* 减少顶部间距 */
         }
         
         /* 卡片整体样式 */
         .stake-card {
             background: linear-gradient(145deg, #0d9488, #134e4a);
             border-radius: 12px;
-            padding: 20px;
+            padding: 18px; /* 稍微减少内边距 */
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
             position: relative;
             overflow: hidden;
             border: 1px solid #14b8a6;
+            line-height: 1.4; /* 调整行距，让文字更紧凑 */
         }
         
         /* 顶部区域：编号 | 期限 | 金额 */
@@ -173,28 +174,28 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
+            margin-bottom: 15px; /* 减少底部间距 */
+            padding-bottom: 12px; /* 减少padding */
             border-bottom: 1px solid rgba(255, 255, 255, 0.15);
         }
         
         .card-id {
-            font-size: 0.95rem;
+            font-size: 0.85rem; /* 稍微减小字体 */
             color: #cbd5e1;
             font-weight: 500;
             background: rgba(0, 0, 0, 0.2);
-            padding: 5px 12px;
+            padding: 4px 10px; /* 减少内边距 */
             border-radius: 20px;
         }
         
         .card-duration {
-            font-size: 1.4rem;
+            font-size: 1.3rem; /* 稍微减小字体 */
             font-weight: 600;
             color: #ffffff;
         }
         
         .card-amount {
-            font-size: 1.4rem;
+            font-size: 1.3rem; /* 稍微减小字体 */
             font-weight: 600;
             color: #ffffff;
         }
@@ -204,44 +205,44 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 15px; /* 减少间距 */
         }
         
         .stake-time {
-            font-size: 1.2rem;
+            font-size: 1.1rem; /* 稍微减小字体 */
             color: #ffffff;
             font-weight: 500;
         }
         
         .remaining-time {
-            font-size: 1rem;
+            font-size: 0.95rem; /* 稍微减小字体 */
             color: #ffffff;
         }
         
         /* 进度条区域 - 改为黄色 */
         .progress-container {
-            margin-bottom: 25px;
+            margin-bottom: 20px; /* 减少间距 */
         }
         
         .progress-header {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 8px;
+            margin-bottom: 6px; /* 减少间距 */
         }
         
         .progress-label {
-            font-size: 0.9rem;
+            font-size: 0.85rem; /* 稍微减小字体 */
             color: #cbd5e1;
         }
         
         .progress-percentage {
-            font-size: 0.9rem;
+            font-size: 0.85rem; /* 稍微减小字体 */
             color: #ffffff;
             font-weight: 500;
         }
         
         .progress-bar {
-            height: 10px;
+            height: 8px; /* 稍微减小高度 */
             background: rgba(255, 255, 255, 0.1);
             border-radius: 5px;
             overflow: hidden;
@@ -249,24 +250,24 @@
         
         .progress-fill {
             height: 100%;
-            border-radius: 5px;
+            border-radius: 4px;
         }
         
         /* 按钮区域 - 调整宽度 */
         .button-container {
             display: flex;
             justify-content: space-between;
-            gap: 15px;
+            gap: 12px; /* 减少按钮间隙 */
         }
         
         .btn {
             flex: none;
-            width: 140px;
+            width: 130px; /* 稍微减小宽度 */
             color: white;
             border: none;
-            padding: 12px 0;
+            padding: 10px 0; /* 减少内边距 */
             border-radius: 8px;
-            font-size: 1rem;
+            font-size: 0.95rem; /* 稍微减小字体 */
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -334,7 +335,7 @@
         .stake-empty-state {
             grid-column: 1 / -1;
             text-align: center;
-            padding: 30px 15px;
+            padding: 25px 12px; /* 减少内边距 */
             color: #94a3b8;
             background-color: rgba(30, 41, 59, 0.5);
             border-radius: 8px;
@@ -342,32 +343,32 @@
         }
         
         .stake-empty-icon {
-            font-size: 2rem;
-            margin-bottom: 10px;
+            font-size: 1.8rem; /* 稍微减小图标 */
+            margin-bottom: 8px; /* 减少间距 */
             color: #475569;
         }
         
         .stake-empty-text {
-            font-size: 0.9rem;
-            margin-bottom: 6px;
+            font-size: 0.85rem; /* 稍微减小字体 */
+            margin-bottom: 4px; /* 减少间距 */
         }
         
         .stake-empty-subtext {
-            font-size: 0.8rem;
+            font-size: 0.75rem; /* 稍微减小字体 */
             color: #64748b;
         }
         
         /* 【状态筛选按钮样式】 */
         .status-filter {
             display: flex;
-            gap: 8px;
-            margin-bottom: 15px;
+            gap: 6px; /* 减少筛选按钮间隙 */
+            margin-bottom: 12px; /* 减少底部间距 */
             flex-wrap: wrap;
         }
         
         .status-filter-btn {
-            font-size: 1rem;  /* 调整此值改变字体大小 */
-            padding: 4px 12px;
+            font-size: 0.95rem;  /* 调整此值改变字体大小 */
+            padding: 3px 10px; /* 减少内边距 */
             border-radius: 20px;
             border: 1px solid #475569;
             background-color: #1e293b;
